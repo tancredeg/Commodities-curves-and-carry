@@ -203,7 +203,7 @@ def build_ng_strip() -> dict[str, object]:
 
 def check() -> int:
     """Compare every sample file with the content hash recorded in the manifest."""
-    manifest = json.loads(MANIFEST.read_text())
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     failures = 0
     for name, entry in manifest["files"].items():
         frame = pd.read_parquet(SAMPLE / name)
@@ -222,14 +222,16 @@ def main() -> int:
         return 1 if check() else 0
 
     SAMPLE.mkdir(parents=True, exist_ok=True)
-    manifest = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {"files": {}}
+    manifest = (
+        json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.exists() else {"files": {}}
+    )
     manifest["files"].update(build_eia_and_fred())
     if args.ng_strip or "ng_strip_snapshot.parquet" not in manifest["files"]:
         manifest["files"]["ng_strip_snapshot.parquet"] = build_ng_strip()
     manifest["sample_as_of"] = SAMPLE_AS_OF
     manifest["eia_futures_last_date"] = EIA_FUTURES_LAST_DATE
     manifest["files"] = dict(sorted(manifest["files"].items()))
-    MANIFEST.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
+    MANIFEST.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return check()
 
 

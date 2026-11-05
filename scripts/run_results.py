@@ -845,7 +845,7 @@ def key_results(
 
 
 def data_coverage(out: Output) -> None:
-    manifest = json.loads((SAMPLE / "MANIFEST.json").read_text())
+    manifest = json.loads((SAMPLE / "MANIFEST.json").read_text(encoding="utf-8"))
     rows = []
     for name, entry in manifest["files"].items():
         extracted = sorted({s["extracted_at_utc"][:10] for s in entry["sources"]})
@@ -901,13 +901,13 @@ def main() -> int:
     used: set[str] = set()
     stale = []
     for doc in DOCUMENTS:
-        old = doc.read_text()
+        old = doc.read_text(encoding="utf-8")
         new, names = render(old, out.blocks)
         used |= names
         if new != old:
             stale.append(doc.name)
             if not args.check:
-                doc.write_text(new)
+                doc.write_text(new, encoding="utf-8")
     unused = set(out.blocks) - used
     if unused:
         print(f"warning: blocks not placed in any document: {sorted(unused)}")

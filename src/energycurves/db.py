@@ -71,7 +71,7 @@ def build_database(
     for name, frame in references.items():
         con.register(name, frame)
     for path in sql_files():
-        con.execute(path.read_text())
+        con.execute(path.read_text(encoding="utf-8"))
     for name in references:
         con.unregister(name)
     return con
@@ -80,7 +80,7 @@ def build_database(
 def run_query(con: duckdb.DuckDBPyConnection, name: str, **params: Any) -> pd.DataFrame:
     """Run ``sql/analytics/<name>.sql`` with named parameters, return a DataFrame."""
     path = SQL_DIR / "analytics" / f"{name}.sql"
-    frame: pd.DataFrame = con.execute(path.read_text(), params).df()
+    frame: pd.DataFrame = con.execute(path.read_text(encoding="utf-8"), params).df()
     return frame
 
 
