@@ -56,4 +56,5 @@ def flag_isolated_spikes(panel: pd.DataFrame, threshold: float = SPIKE_THRESHOLD
         & ((ret + ret_next).abs() < SPIKE_REVERSAL * ret.abs())
         & (med < SPIKE_QUIET_RATIO * ret.abs())
     )
-    return flag.reindex(panel.index).fillna(False).astype(bool)
+    out: pd.Series = flag.reindex(panel.index).fillna(False).astype(bool)
+    return out

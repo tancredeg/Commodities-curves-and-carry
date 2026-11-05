@@ -31,6 +31,7 @@ from functools import lru_cache
 
 import numpy as np
 import pandas as pd
+from dateutil.relativedelta import MO
 from pandas.tseries.holiday import (
     AbstractHolidayCalendar,
     GoodFriday,
@@ -42,7 +43,6 @@ from pandas.tseries.holiday import (
     nearest_workday,
     sunday_to_monday,
 )
-from dateutil.relativedelta import MO
 from pandas.tseries.offsets import DateOffset
 
 DAYS_PER_YEAR = 365.0
@@ -65,7 +65,12 @@ SPECIAL_CLOSURES: tuple[str, ...] = (
 # Exchange days that the 2008-2010 NG expiries did not count as business days
 # (day after Thanksgiving, New Year's Eve 2010): the EIA contract slots shift one
 # trading day earlier than the rule would imply in those four months.
-NG_EXPIRY_NON_BUSINESS_DAYS: tuple[str, ...] = ("2008-11-28", "2009-11-27", "2010-11-26", "2010-12-31")
+NG_EXPIRY_NON_BUSINESS_DAYS: tuple[str, ...] = (
+    "2008-11-28",
+    "2009-11-27",
+    "2010-11-26",
+    "2010-12-31",
+)
 
 
 class NymexHolidayCalendar(AbstractHolidayCalendar):
@@ -237,7 +242,7 @@ def price_implied_roll_offsets(
     days = pd.DatetimeIndex(wide.index)
     rows = []
     for roll in expected_rolls:
-        i = int(days.get_loc(roll))
+        i = int(days.searchsorted(roll))
         if i - window < 1 or i + window >= len(days):
             continue
         win = score[i - window : i + window + 1]
