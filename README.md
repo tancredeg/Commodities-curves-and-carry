@@ -91,8 +91,30 @@ analytics queries in `sql/analytics/` each start with the business question, inp
 the pitfall they avoid (matching crack legs on delivery month, ASOF joins that never look
 ahead, windows computed before display filters).
 
-Example — `33_inventories.sql`: weekly stocks against the average of the same week over the 5
-previous years, joined ASOF to the curve of the week:
+| Table | One row per | Primary key |
+| :--- | :--- | :--- |
+| `dim_commodity` | contract (specifications, units) | `code` |
+| `dim_contract_calendar` | listed delivery month, last trading day | `(code, delivery_month)` |
+| `fact_price_daily` | raw EIA settlement | `(date, code, contract)` |
+| `fact_curve` | clean curve point with delivery month and τ | `(trade_date, code, contract)` |
+| `fact_curve_snapshot` | live NG strip on the snapshot date | `(snapshot_date, code, delivery_month)` |
+| `fact_spot_daily`, `fact_inventory`, `fact_rate_daily`, `fx_rates` | spot, weekly stock, rate, FX fixing | date (or week) + series |
+
+Example 1 — `33_inventories.sql`: weekly stocks against the average of the same week over the
+5 previous years, joined ASOF to the curve of the week. The core of the query:
+
+```sql
+avg(stock) OVER same_week_5y AS avg_5y            -- 5 previous years only, no look-ahead
+...
+WINDOW same_week_5y AS (
+    PARTITION BY code, region, iso_week
+    ORDER BY iso_year
+    RANGE BETWEEN 5 PRECEDING AND 1 PRECEDING     -- calendar years, robust to a missing week 53
+)
+...
+ASOF JOIN v_roll_yield AS r
+    ON r.code = h.code AND h.week_ending >= r.trade_date   -- last curve on or before the week end
+```
 
 <!-- BEGIN:sql-example -->
 | Contract | Stocks | Weeks | corr(y14, stock gap) | y14 change per +1 pt of stock gap (pp/yr) |
@@ -104,6 +126,20 @@ previous years, joined ASOF to the curve of the week:
 
 Weekly EIA stocks versus the average of the same week over the 5 previous years, 2010 to 2024-04; y14 = annualised slope between contracts 1 and 4 on the last trading day of the week.
 <!-- END:sql-example -->
+
+Example 2 — `31_spread_zscore.sql`: crack spreads against their last 60 sessions, legs matched
+on delivery month (crude expires about ten days before the products, so "contract 2" is not
+the same month for all three):
+
+<!-- BEGIN:sql-example-2 -->
+| Spread (USD/bbl) | Delivery | Value | 60-day mean | 60-day sd | z | z (exec.) |
+| :--- | :--- | ---: | ---: | ---: | ---: | ---: |
+| crack_321 | 2024-06 | 30.03 | 30.40 | 2.85 | -0.13 | -0.09 |
+| distillate_crack | 2024-06 | 29.95 | 34.24 | 4.09 | -1.05 | -1.08 |
+| gasoline_crack | 2024-06 | 30.07 | 28.48 | 4.38 | +0.36 | +0.39 |
+
+On 2024-04-05, the last EIA settlement. `z (exec.)` uses a window ending the day before, usable by a signal traded at the close.
+<!-- END:sql-example-2 -->
 
 ### 3. Carry
 

@@ -768,8 +768,39 @@ def sql_layer(out: Output) -> dict[str, float]:
         )
         .reindex(list(CODES_ORDER))
     )
+    z = run_query(con, "31_spread_zscore", start="2024-04-05", end=EIA_END)
     con.close()
     out.tables["sql_inventory_vs_curve"] = summary.reset_index()
+    out.tables["sql_crack_zscore"] = z
+    out.blocks["sql-example-2"] = md_table(
+        pd.DataFrame(
+            [
+                [
+                    r.spread,
+                    pd.Timestamp(r.delivery_month).strftime("%Y-%m"),
+                    num(r.value, 2),
+                    num(r.mean_60, 2),
+                    num(r.sd_60, 2),
+                    num(r.z60, 2, sign=True),
+                    num(r.z60_exec, 2, sign=True),
+                ]
+                for r in z.itertuples()
+            ],
+            columns=[
+                "Spread (USD/bbl)",
+                "Delivery",
+                "Value",
+                "60-day mean",
+                "60-day sd",
+                "z",
+                "z (exec.)",
+            ],
+        ),
+        align="llrrrrr",
+    ) + (
+        f"\n\nOn {pd.Timestamp(z['trade_date'].iloc[0]).date()}, the last EIA settlement. "
+        "`z (exec.)` uses a window ending the day before, usable by a signal traded at the close."
+    )
     out.blocks["sql-example"] = (
         md_table(
             pd.DataFrame(
