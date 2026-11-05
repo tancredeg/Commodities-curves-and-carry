@@ -102,7 +102,7 @@ def _holidays(start_year: int, end_year: int) -> frozenset[pd.Timestamp]:
 
 
 @lru_cache(maxsize=8)
-def business_days(start: str = "1980-01-01", end: str = "2035-12-31") -> pd.DatetimeIndex:
+def business_days(start: str = "1975-01-01", end: str = "2035-12-31") -> pd.DatetimeIndex:
     """Weekdays minus NYMEX holidays between ``start`` and ``end`` (inclusive)."""
     days = pd.bdate_range(start, end)
     hol = _holidays(days[0].year, days[-1].year)
@@ -113,18 +113,26 @@ def _is_business_day(day: pd.Timestamp) -> bool:
     return bool(business_days().isin([day]).any())
 
 
+def _nth_before(days: pd.DatetimeIndex, day: pd.Timestamp, n: int) -> pd.Timestamp:
+    """The ``n``-th element of ``days`` strictly before ``day`` (no wrap-around)."""
+    pos = int(days.searchsorted(day, side="left")) - n
+    if pos < 0 or day > days[-1]:
+        raise ValueError(f"{day.date()} is outside the business-day calendar")
+    return pd.Timestamp(days[pos])
+
+
 def _business_days_before(day: pd.Timestamp, n: int) -> pd.Timestamp:
     """The ``n``-th business day strictly before ``day``."""
     bd = business_days()
-    pos = int(bd.searchsorted(day, side="left"))
-    return pd.Timestamp(bd[pos - n])
+    return _nth_before(bd, day, n)
 
 
 def _ng_business_days_before(delivery_month: pd.Period) -> int:
     """Business days between NG expiry and the first day of the delivery month.
 
     Current NYMEX rule: 3. The EIA prices show earlier expiries in the 1990s
-    (inferred from the day the contract slots shift, see ``detect_rolls``):
+    (inferred from the day the contract slots shift, see
+    ``price_implied_roll_offsets``):
     6 business days for deliveries up to January 1996, 5 business days for
     February 1996 to January 1997.
     """
@@ -150,8 +158,7 @@ def last_trade_date(code: str, delivery_month: pd.Period) -> pd.Timestamp:
     if code == "NG":
         n = _ng_business_days_before(delivery_month)
         bd_ng = bd[~bd.isin(pd.to_datetime(list(NG_EXPIRY_NON_BUSINESS_DAYS)))]
-        pos = int(bd_ng.searchsorted(month_start, side="left"))
-        return pd.Timestamp(bd_ng[pos - n])
+        return _nth_before(bd_ng, month_start, n)
     if code in ("RB", "HO"):
         return _business_days_before(month_start, 1)
     raise ValueError(f"unknown commodity code {code!r}")
