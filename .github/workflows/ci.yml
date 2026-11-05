@@ -27,3 +27,5 @@ jobs:
         run: pytest --cov=energycurves --cov-report=term-missing
       - name: Sample integrity
         run: python scripts/fetch_data.py --check
+      - name: README and docs numbers match the code
+        run: python scripts/run_results.py --check
