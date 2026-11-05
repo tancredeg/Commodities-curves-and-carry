@@ -29,3 +29,5 @@ jobs:
         run: python scripts/fetch_data.py --check
       - name: README and docs numbers match the code
         run: python scripts/run_results.py --check
+      - name: Demo notebook runs end to end
+        run: jupyter nbconvert --to notebook --execute notebooks/demo.ipynb --output-dir /tmp
