@@ -33,6 +33,10 @@ Commits poussés sur `main` :
 - `3a8ea9f` ci: move checkout and setup-python to their Node 24 majors
 - `44304c9` docs: progress log for sessions S1-S11, release notes and LinkedIn draft
 - `e831ed8` docs: state the Kirk ATM result and the replay test precisely
+- `1eda58d` docs(sql): schema table, query excerpt and a second worked example
+- `84d5fb5` docs: record the refused tag push and the full commit list
+- puis : test(regression) — tests de régression pytest sur les résultats clés (prévus au plan,
+  oubliés jusque-là ; le contrôle `run_results.py --check` couvrait déjà les chiffres arrondis)
 - Tag `v1.0` créé localement mais **refusé au push (HTTP 403 du proxy de la session)** : à créer
   depuis GitHub (voir « Reste à faire »).
 

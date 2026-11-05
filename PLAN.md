@@ -2,7 +2,7 @@
 
 > Phase 0 d'un repo créé de zéro, rédigée le 2026-10-12. Tient lieu d'`AUDIT.md` pour ce repo :
 > les risques sont classés par gravité au §3. À relire avant chaque séance avec `PROGRESS.md`.
-> Nom proposé : repo `energy-curves`, package `energycurves` (modifiable avant S1, pas après).
+> Nom retenu : repo `Commodities-curves-and-carry`, package `energycurves`.
 
 ---
 
@@ -74,7 +74,7 @@ et `PET_PRI_SPT_S1_D.xls` — URL pétrole à confirmer en S1). Format `.xls` �
 ## 2. Arborescence
 
 ```
-energy-curves/
+Commodities-curves-and-carry/
 ├── CLAUDE.md  PLAN.md  PROGRESS.md  README.md
 ├── pyproject.toml              # deps épinglées ; extras [dev], [fetch] (yfinance)
 ├── .github/workflows/ci.yml    # ruff, mypy, pytest --cov
