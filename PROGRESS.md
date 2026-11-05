@@ -29,7 +29,12 @@ Commits poussés sur `main` :
 - `1a71361` feat(results): one script regenerates every table, figure and document number
 - `a7c40fd` feat(results): calendar check and one-factor storage benchmark
 - `aa1de9a` docs: README, data notes and demo notebook
-- (suivants : encodage UTF-8 explicite, PROGRESS.md, tag `v1.0`)
+- `870b4cf` fix: read and write text files explicitly as UTF-8
+- `3a8ea9f` ci: move checkout and setup-python to their Node 24 majors
+- `44304c9` docs: progress log for sessions S1-S11, release notes and LinkedIn draft
+- `e831ed8` docs: state the Kirk ATM result and the replay test precisely
+- Tag `v1.0` créé localement mais **refusé au push (HTTP 403 du proxy de la session)** : à créer
+  depuis GitHub (voir « Reste à faire »).
 
 Décisions et écarts au plan :
 - Valeur intrinsèque calculée deux fois : LP HiGHS et programmation dynamique sur grille
@@ -72,8 +77,9 @@ module 1, `6388ee3` module 2.
 
 1. Relire le README sur GitHub (rendu des formules et des tableaux).
 2. Épingler le repo sur le profil GitHub (réglage de profil, non fait ici).
-3. Publier la release GitHub si elle n'a pas pu être créée automatiquement (tag `v1.0` poussé ;
-   notes de version ci-dessous).
+3. Créer la release `v1.0` sur GitHub (Releases → Draft a new release → nouveau tag `v1.0` sur
+   `main`), avec les notes de version ci-dessous : le push du tag depuis la session a été
+   refusé (403).
 4. Publier le post LinkedIn (brouillon ci-dessous).
 
 Pistes après v1.0 (non planifiées) : granularité journalière et ratchets pour le stockage,
