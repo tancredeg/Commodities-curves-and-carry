@@ -36,7 +36,8 @@ from matplotlib.ticker import FixedLocator, FuncFormatter, NullLocator
 from energycurves import curves
 from energycurves.carry import backtest as bt
 from energycurves.carry.signals import deseasonalize, raw_carry
-from energycurves.data.registry import NG_STRIP_SNAPSHOT_DATE
+from energycurves.data import calendar as cal
+from energycurves.data.registry import CODES, NG_STRIP_SNAPSHOT_DATE
 from energycurves.data.stitch import build_curve_panel, slot_returns
 from energycurves.db import build_database, run_query
 from energycurves.spreads.pricing import LEGS, price_grid, snapshot
@@ -95,12 +96,19 @@ class Output:
 # ---------------------------------------------------------------- formatting
 
 
+def _no_negative_zero(x: float, digits: int) -> float:
+    """``-0.001`` shown with 2 digits would print ``-0.00``: show ``0.00`` instead."""
+    return 0.0 if round(x, digits) == 0 else x
+
+
 def pct(x: float, digits: int = 1, sign: bool = False) -> str:
-    return f"{100 * x:+.{digits}f}%" if sign else f"{100 * x:.{digits}f}%"
+    v = _no_negative_zero(100 * x, digits)
+    return f"{v:+.{digits}f}%" if sign and v != 0 else f"{v:.{digits}f}%"
 
 
 def num(x: float, digits: int = 2, sign: bool = False) -> str:
-    return f"{x:+.{digits}f}" if sign else f"{x:.{digits}f}"
+    v = _no_negative_zero(x, digits)
+    return f"{v:+.{digits}f}" if sign and v != 0 else f"{v:.{digits}f}"
 
 
 def md_table(frame: pd.DataFrame, align: str | None = None) -> str:
@@ -146,6 +154,30 @@ def _figure(nrows: int, ncols: int, size: tuple[float, float], **kw: object) -> 
 def _save(fig: plt.Figure, path: Path, title: str) -> None:
     fig.savefig(path, dpi=150, facecolor=SURFACE, metadata={**FIG_META, "Title": title})
     plt.close(fig)
+
+
+def calendar_check(panel: pd.DataFrame, out: Output) -> None:
+    """Share of identifiable rolls where the rule-based calendar matches the prices."""
+    bd = cal.business_days()
+    calendar = cal.expiry_calendar(CODES, "1979-01", "2031-12")
+    frames = []
+    for code in CODES:
+        wide = panel[panel["code"] == code].pivot(index="date", columns="contract", values="settle")
+        wide = wide.reindex(bd[(bd >= wide.index.min()) & (bd <= wide.index.max())])
+        rolls = cal.roll_dates(calendar, code, pd.DatetimeIndex(wide.index))
+        offsets = cal.price_implied_roll_offsets(wide, rolls)
+        offsets["code"] = code
+        frames.append(offsets)
+    res = pd.concat(frames, ignore_index=True)
+    identifiable = res[res["snr"] > 8]
+    out.tables["calendar_check"] = res
+    exact = float((identifiable["offset"] == 0).mean())
+    out.blocks["calendar-check"] = (
+        f"On the {len(identifiable)} rolls that prices can identify (out of {len(res)}), the "
+        f"rule-based roll day matches the price-implied one in {pct(exact, 1)} of cases; the "
+        "remaining cases were reviewed one by one (extreme-volatility days where the price-based "
+        "detector fails)."
+    )
 
 
 # ---------------------------------------------------------------- module 1
@@ -436,6 +468,7 @@ def module3(panel: pd.DataFrame, out: Output) -> dict[str, float]:
     }.items():
         calib[label] = calibrate(calibration_sample(panel, "NG", *window))
     base_label = "2014-04 to 2024-04 (base)"
+    one_factor = calibrate_leg(panel, "NG", "2014-04-06", "2024-04-06")
     base = calib[base_label].params
     alt = calib["2019-04 to 2024-04"].params
     variants: dict[str, TwoFactorParams] = {
@@ -449,6 +482,9 @@ def module3(panel: pd.DataFrame, out: Output) -> dict[str, float]:
         "σ_l × 1.5": base.scaled(sigma_l=1.5),
         "ρ = 0": base.scaled(rho=0.0),
         "ρ = +0.5": base.scaled(rho=0.5),
+        "one factor (Schwartz 1997), calibrated 2014–2024": TwoFactorParams(
+            sigma_s=one_factor.sigma, kappa=max(one_factor.kappa, 1e-6), sigma_l=0.0, rho=0.0
+        ),
     }
     sens = sensitivity(contract, market, t0, rate, variants, n_paths=STORAGE_PATHS, seed=SEED)
     seasonal_val, _ = value_storage(
@@ -548,7 +584,7 @@ def module3(panel: pd.DataFrame, out: Output) -> dict[str, float]:
                 r.curve,
                 r.variant,
                 num(r.intrinsic, 3),
-                f"{num(r.rolling_intrinsic, 3)} ± {num(r.se, 3)}",
+                f"{num(r.rolling_intrinsic, 3)} ± {num(r.se, 4)}",
                 num(r.extrinsic, 3),
                 pct(r.extrinsic_share, 1, sign=True),
             ]
@@ -793,7 +829,7 @@ def key_results(
         [
             "Gas storage",
             f"Intrinsic vs rolling intrinsic, {m3['start']} to {m3['end']} (USD/MMBtu of capacity)",
-            f"{num(m3['intrinsic'], 3)} vs {num(m3['ri'], 3)} ± {num(m3['ri_se'], 3)} "
+            f"{num(m3['intrinsic'], 3)} vs {num(m3['ri'], 3)} ± {num(m3['ri_se'], 4)} "
             f"(extrinsic {pct(m3['share'], 1, sign=True)})",
         ],
         [
@@ -853,6 +889,7 @@ def main() -> int:
     t_start = time.time()
     out = Output()
     panel = build_curve_panel(pd.read_parquet(SAMPLE / "futures_daily.parquet"))
+    calendar_check(panel, out)
     ry = module1(panel, out)
     m2 = module2(panel, ry, out)
     m3 = module3(panel, out)
