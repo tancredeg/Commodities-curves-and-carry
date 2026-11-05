@@ -59,7 +59,7 @@ def download(url: str, target: Path) -> dict[str, str]:
     """Download ``url`` to ``target``; return provenance (URL, UTC time, sha256)."""
     target.parent.mkdir(parents=True, exist_ok=True)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=120) as response:  # noqa: S310 - fixed https URLs
+    with urllib.request.urlopen(request, timeout=120) as response:
         payload = response.read()
     target.write_bytes(payload)
     time.sleep(1.0)  # be polite with the public servers
@@ -132,7 +132,10 @@ def build_eia_and_fred() -> dict[str, dict[str, object]]:
         "sources": [provenance[Path(s.url).name] for s in INVENTORY_SERIES],
     }
 
-    for out_name, catalogue in (("rates_daily.parquet", RATE_SERIES), ("fx_daily.parquet", FX_SERIES)):
+    for out_name, catalogue in (
+        ("rates_daily.parquet", RATE_SERIES),
+        ("fx_daily.parquet", FX_SERIES),
+    ):
         frames, sources = [], []
         for series in catalogue:
             name = f"{series.source_key}.csv"
@@ -141,7 +144,9 @@ def build_eia_and_fred() -> dict[str, dict[str, object]]:
             frame["series_id"] = series.series_id
             frame["unit"] = series.unit
             frames.append(frame[frame["date"] <= pd.Timestamp(SAMPLE_AS_OF)])
-        data = pd.concat(frames, ignore_index=True)[["date", "series_id", "value", "unit", "source_key"]]
+        data = pd.concat(frames, ignore_index=True)[
+            ["date", "series_id", "value", "unit", "source_key"]
+        ]
         data.to_parquet(SAMPLE / out_name, index=False)
         entries[out_name] = {
             **describe(data),
