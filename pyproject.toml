@@ -47,13 +47,13 @@ select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF", "PL", "NPY", "PD"]
 ignore = [
     "PLR0913",  # finance functions legitimately take many parameters
     "PLR2004",  # magic numbers are financial constants documented in docstrings
-    "PD901",    # `df` is a fine local name
     "N803",     # math notation (F, K, T) in argument names
     "N806",     # math notation in local variables
     "RUF001",   # unicode symbols (σ, κ, τ) in docstrings are intentional
     "RUF002",
     "RUF003",
     "PLC0415",  # lazy imports of optional dependencies
+    "PD010",    # pivot is clearer than pivot_table for unique keys
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -68,7 +68,7 @@ mypy_path = "src"
 files = ["src"]
 
 [[tool.mypy.overrides]]
-module = ["xlrd", "yfinance", "scipy", "scipy.*", "matplotlib", "matplotlib.*", "duckdb"]
+module = ["xlrd", "yfinance", "scipy", "scipy.*", "matplotlib", "matplotlib.*", "duckdb", "dateutil", "dateutil.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
