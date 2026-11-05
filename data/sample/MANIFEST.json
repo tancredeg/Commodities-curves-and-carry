@@ -1,0 +1,196 @@
+{
+  "files": {
+    "futures_daily.parquet": {
+      "rows": 121719,
+      "first_date": "1980-01-02",
+      "last_date": "2024-04-05",
+      "content_sha256": "aad5bf9692043403c2f56e593847dca03fdda01673e2b3a056901556dff14702",
+      "description": "NYMEX settlements of contracts 1-4 for CL, NG, RB, HO as published by the EIA (14:30 ET close). No cleaning applied.",
+      "units": {
+        "CL": "USD/bbl",
+        "NG": "USD/MMBtu",
+        "RB": "USD/gal",
+        "HO": "USD/gal"
+      },
+      "sources": [
+        {
+          "url": "https://www.eia.gov/dnav/pet/xls/PET_PRI_FUT_S1_D.xls",
+          "extracted_at_utc": "2026-11-05T14:10:07+00:00",
+          "raw_sha256": "9cbdc50a54913b1fa8a6e572e8d3bf9e7612b7a8a05c6f9888bc45923073eb49"
+        },
+        {
+          "url": "https://www.eia.gov/dnav/ng/xls/NG_PRI_FUT_S1_D.xls",
+          "extracted_at_utc": "2026-11-05T14:10:09+00:00",
+          "raw_sha256": "e2d994ccec4a86b63d08e9cbc62d364d32bd95ff625e3ab1b06be0fc012d9765"
+        }
+      ],
+      "source_keys": [
+        "EER_EPD2F_PE1_Y35NY_DPG",
+        "EER_EPD2F_PE2_Y35NY_DPG",
+        "EER_EPD2F_PE3_Y35NY_DPG",
+        "EER_EPD2F_PE4_Y35NY_DPG",
+        "EER_EPMRR_PE1_Y35NY_DPG",
+        "EER_EPMRR_PE2_Y35NY_DPG",
+        "EER_EPMRR_PE3_Y35NY_DPG",
+        "EER_EPMRR_PE4_Y35NY_DPG",
+        "RCLC1",
+        "RCLC2",
+        "RCLC3",
+        "RCLC4",
+        "RNGC1",
+        "RNGC2",
+        "RNGC3",
+        "RNGC4"
+      ]
+    },
+    "fx_daily.parquet": {
+      "rows": 6979,
+      "first_date": "1999-01-04",
+      "last_date": "2026-10-30",
+      "content_sha256": "ce33917f3823665b3b055f223a2eea7763a7ff9a35f918a482e2a54125c2c511",
+      "description": "US dollars to one euro, noon buying rate in New York (FRED).",
+      "units": {
+        "EURUSD": "USD per EUR"
+      },
+      "sources": [
+        {
+          "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DEXUSEU",
+          "extracted_at_utc": "2026-11-05T14:10:19+00:00",
+          "raw_sha256": "3d95f828a707b568522fc90b3efb08a82169777536b3f9a131ad2df065f3a791"
+        }
+      ]
+    },
+    "inventory_weekly.parquet": {
+      "rows": 7402,
+      "first_date": "1982-08-20",
+      "last_date": "2026-10-30",
+      "content_sha256": "a47bec58204057ef068542ffb73609976110da8a8a4faa8d4b0e99234596579e",
+      "description": "EIA weekly inventories (week-ending Friday).",
+      "series": {
+        "NG_STORAGE_L48": {
+          "source_key": "NW2_EPG0_SWO_R48_BCF",
+          "unit": "Bcf",
+          "region": "L48"
+        },
+        "CRUDE_STOCKS_US": {
+          "source_key": "WCESTUS1",
+          "unit": "kbbl",
+          "region": "US"
+        },
+        "GASOLINE_STOCKS_US": {
+          "source_key": "WGTSTUS1",
+          "unit": "kbbl",
+          "region": "US"
+        },
+        "DISTILLATE_STOCKS_US": {
+          "source_key": "WDISTUS1",
+          "unit": "kbbl",
+          "region": "US"
+        }
+      },
+      "sources": [
+        {
+          "url": "https://www.eia.gov/dnav/ng/hist_xls/NW2_EPG0_SWO_R48_BCFw.xls",
+          "extracted_at_utc": "2026-11-05T14:10:12+00:00",
+          "raw_sha256": "249423f09af032d9c3b94b362042314e8a68c99bbdef74130995f04fc23e4127"
+        },
+        {
+          "url": "https://www.eia.gov/dnav/pet/hist_xls/WCESTUS1w.xls",
+          "extracted_at_utc": "2026-11-05T14:10:14+00:00",
+          "raw_sha256": "5489a1f004087cd553a15d309bd7cab8772ab957e8a9db45655ed1ea161bec36"
+        },
+        {
+          "url": "https://www.eia.gov/dnav/pet/hist_xls/WGTSTUS1w.xls",
+          "extracted_at_utc": "2026-11-05T14:10:15+00:00",
+          "raw_sha256": "c899b608d76c08d39b5236620f209951885dc1c1aee1603344be2180220c8c31"
+        },
+        {
+          "url": "https://www.eia.gov/dnav/pet/hist_xls/WDISTUS1w.xls",
+          "extracted_at_utc": "2026-11-05T14:10:16+00:00",
+          "raw_sha256": "6ec1a622589d3339818c0222209907f8c27390383e6fd320c16e5d8e4c90dfa6"
+        }
+      ]
+    },
+    "ng_strip_snapshot.parquet": {
+      "rows": 25,
+      "first_date": "2026-12-01",
+      "last_date": "2028-12-01",
+      "content_sha256": "d33101b6d9f7a2e1c36808e13a7ba0f315b5ad834c4c102928c80420be5454ce",
+      "description": "Daily close of every live NYMEX Henry Hub contract on the snapshot date, from Yahoo Finance via yfinance (close price, not the official CME settlement).",
+      "units": {
+        "NG": "USD/MMBtu"
+      },
+      "snapshot_date": "2026-11-04",
+      "sources": [
+        {
+          "url": "https://finance.yahoo.com (tickers NG<month><yy>.NYM)",
+          "extracted_at_utc": "2026-11-05T14:11:02+00:00"
+        }
+      ]
+    },
+    "rates_daily.parquet": {
+      "rows": 18201,
+      "first_date": "1954-01-04",
+      "last_date": "2026-11-03",
+      "content_sha256": "3a43a7922ecf055a4eff08cd4b58431f68c70c7c72133aeedcdad6ac12ea0cfe",
+      "description": "3-month Treasury bill, secondary market, discount basis (FRED).",
+      "units": {
+        "DTB3": "percent"
+      },
+      "sources": [
+        {
+          "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTB3",
+          "extracted_at_utc": "2026-11-05T14:10:18+00:00",
+          "raw_sha256": "e5fa1cb672371e23f5eb5fa45c23dc61e122b1a97cd9b3ebc641bcdaf68f45ac"
+        }
+      ]
+    },
+    "spot_daily.parquet": {
+      "rows": 47488,
+      "first_date": "1986-01-02",
+      "last_date": "2026-11-03",
+      "content_sha256": "22beee26f2b3cb4a3faa992433d9e8d77485bc42badf625ba38656446e84c2ec",
+      "description": "EIA daily spot prices (FOB).",
+      "series": {
+        "WTI": {
+          "source_key": "RWTC",
+          "unit": "USD/bbl"
+        },
+        "BRENT": {
+          "source_key": "RBRTE",
+          "unit": "USD/bbl"
+        },
+        "NYH_GASOLINE": {
+          "source_key": "EER_EPMRU_PF4_Y35NY_DPG",
+          "unit": "USD/gal"
+        },
+        "NYH_HEATING_OIL": {
+          "source_key": "EER_EPD2F_PF4_Y35NY_DPG",
+          "unit": "USD/gal"
+        },
+        "NYH_ULSD": {
+          "source_key": "EER_EPD2DXL0_PF4_Y35NY_DPG",
+          "unit": "USD/gal"
+        },
+        "HENRY_HUB": {
+          "source_key": "RNGWHHD",
+          "unit": "USD/MMBtu"
+        }
+      },
+      "sources": [
+        {
+          "url": "https://www.eia.gov/dnav/pet/xls/PET_PRI_SPT_S1_D.xls",
+          "extracted_at_utc": "2026-11-05T14:10:11+00:00",
+          "raw_sha256": "b5a1c5ba52029836e1999efab249dccf756d53cb264a9e8a9b4dfe94b1381151"
+        },
+        {
+          "url": "https://www.eia.gov/dnav/ng/xls/NG_PRI_FUT_S1_D.xls",
+          "extracted_at_utc": "2026-11-05T14:10:09+00:00",
+          "raw_sha256": "e2d994ccec4a86b63d08e9cbc62d364d32bd95ff625e3ab1b06be0fc012d9765"
+        }
+      ]
+    }
+  },
+  "sample_as_of": "2026-11-04",
+  "eia_futures_last_date": "2024-04-05"
+}

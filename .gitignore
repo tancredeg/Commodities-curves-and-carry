@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.ipynb_checkpoints/
+
+# Data: raw downloads and the rebuilt database are never committed
+data/raw/
+data/*.duckdb
+data/*.duckdb.wal
+*.duckdb
+*.duckdb.wal
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
