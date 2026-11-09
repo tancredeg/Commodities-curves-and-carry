@@ -7,10 +7,10 @@ Under the pricing measure every futures price is a martingale::
 with ``T`` the contract's last trading day. The short factor (σ_s, decaying at
 rate κ) moves the front of the curve more than the back — the Samuelson
 effect — and makes calendar spreads random; the long factor (σ_l) shifts the
-whole curve. With a single factor, adjacent contracts are almost perfectly
-correlated, spreads barely move and a storage contract has (nearly) no
-extrinsic value by construction; hence two factors (Schwartz & Smith, 2000,
-use the same two-factor structure in its "short-term/long-term" form).
+whole curve. With a single factor, all contracts are perfectly correlated:
+spreads move only through the gap between their volatilities, and the storage
+extrinsic value is much smaller (one-factor benchmark in the README); hence two
+factors (Schwartz & Smith, 2000, give the same "short-term/long-term" form).
 
 Instantaneous covariance of ``d ln F`` for two contracts with times to expiry
 ``τ_i, τ_j`` (per year)::

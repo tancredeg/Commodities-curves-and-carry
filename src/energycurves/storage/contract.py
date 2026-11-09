@@ -12,9 +12,9 @@ a value in USD/MMBtu is a value per MMBtu of capacity. The decision for month
 delivery month: the model has monthly granularity, with no intra-month spot
 optionality and no inventory-dependent rates (ratchets).
 
-Defaults follow a stylised seasonal (salt-cavern-free) reservoir: six months to
-fill, three months to empty, 0.02 USD/MMBtu variable cost on each leg. They
-are illustrative and every field is a parameter.
+Defaults follow a stylised seasonal reservoir (depleted-field type, not a fast
+salt cavern): six months to fill, three to empty, 0.02 USD/MMBtu variable cost
+on each leg. They are illustrative and every field is a parameter.
 """
 
 from __future__ import annotations
