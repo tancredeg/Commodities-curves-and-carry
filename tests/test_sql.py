@@ -113,38 +113,58 @@ def test_seasonality_query_equals_python(
 
 def test_crack_spread_legs_are_matched_on_delivery_month(con: duckdb.DuckDBPyConnection) -> None:
     out = run_query(con, "31_spread_zscore", start="2023-06-19", end="2023-06-24")
-    row = out[(out["spread"] == "crack_321")].iloc[0]
-    day, month = row["trade_date"], row["delivery_month"]
-    prices = (
-        con.execute(
-            "SELECT code, settle FROM fact_curve WHERE trade_date = ? AND delivery_month = ?",
-            [day, month],
-        )
-        .df()
-        .set_index("code")["settle"]
-    )
+    rows = out[out["spread"] == "crack_321"].set_index("trade_date")
+    # 2023-06-21: the CL July contract expired the day before, RB/HO July still trade,
+    # so the shown month (September) is CL contract 2 but RB/HO contract 3.
+    day = pd.Timestamp("2023-06-21")
+    month = rows.loc[day, "delivery_month"]
+    legs = con.execute(
+        "SELECT code, contract, settle FROM fact_curve WHERE trade_date = ? AND delivery_month = ?",
+        [day, month],
+    ).df()
+    slots = legs.set_index("code")["contract"]
+    prices = legs.set_index("code")["settle"]
+    assert (slots["CL"], slots["RB"], slots["HO"]) == (2, 3, 3)
     expected = (2 * 42 * prices["RB"] + 42 * prices["HO"]) / 3 - prices["CL"]
-    assert np.isclose(row["value"], expected)
-    # around the CL expiry the slot numbers differ across the three legs
-    slots = (
-        con.execute(
-            "SELECT code, contract FROM fact_curve WHERE trade_date = ? AND delivery_month = ?",
-            [day, month],
-        )
-        .df()
-        .set_index("code")["contract"]
-    )
-    assert slots["CL"] == 2
+    assert np.isclose(rows.loc[day, "value"], expected)
+
+
+def _gasoline_crack_level(con: duckdb.DuckDBPyConnection, shown: pd.DataFrame) -> np.ndarray:
+    """Back-adjusted level rebuilt in pandas: cumulated changes of yesterday's month."""
+    curve = con.execute(
+        "SELECT trade_date, code, delivery_month, settle FROM fact_curve WHERE code IN ('CL', 'RB')"
+    ).df()
+    px = curve.pivot_table(index=["trade_date", "delivery_month"], columns="code", values="settle")
+    crack = (42 * px["RB"] - px["CL"]).dropna()
+    prev_day = shown["trade_date"].shift(1)
+    prev_month = shown["delivery_month"].shift(1)
+    now = crack.reindex(pd.MultiIndex.from_arrays([shown["trade_date"], prev_month])).to_numpy()
+    before = crack.reindex(pd.MultiIndex.from_arrays([prev_day, prev_month])).to_numpy()
+    return np.cumsum(np.nan_to_num(now - before))
 
 
 def test_spread_zscore_exec_window_ends_yesterday(con: duckdb.DuckDBPyConnection) -> None:
     out = run_query(con, "31_spread_zscore", **FULL)
     s = out[out["spread"] == "gasoline_crack"].reset_index(drop=True)
-    i = 500
-    past = s["value"].iloc[i - 60 : i]
-    expected = (s["value"].iloc[i] - past.mean()) / past.std(ddof=1)
-    assert np.isclose(s["z60_exec"].iloc[i], expected)
+    level = _gasoline_crack_level(con, s)
+    for i in (500, 2500):
+        past = level[i - 60 : i]
+        expected = (level[i] - past.mean()) / past.std(ddof=1)
+        assert np.isclose(s["z60_exec"].iloc[i], expected)
     assert s["z60_exec"].iloc[:60].isna().all()
+
+
+def test_spread_zscore_ignores_the_change_of_delivery_month(
+    con: duckdb.DuckDBPyConnection,
+) -> None:
+    """At each CL expiry the shown month changes; the z-score must not jump with it."""
+    out = run_query(con, "31_spread_zscore", **FULL)
+    for spread, grp in out.groupby("spread"):
+        s = grp.sort_values("trade_date")
+        dz = s["z60"].diff().abs()
+        switch = s["delivery_month"].ne(s["delivery_month"].shift()) & dz.notna()
+        assert switch.sum() > 200
+        assert dz[switch].mean() < 1.5 * dz[~switch].mean(), spread
 
 
 def test_inventory_deviation_uses_past_years_only(con: duckdb.DuckDBPyConnection) -> None:

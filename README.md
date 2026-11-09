@@ -129,16 +129,18 @@ Weekly EIA stocks versus the average of the same week over the 5 previous years,
 
 Example 2 — `31_spread_zscore.sql`: crack spreads against their last 60 sessions, legs matched
 on delivery month (crude expires about ten days before the products, so "contract 2" is not
-the same month for all three):
+the same month for all three). The month shown changes at each crude expiry and cracks are
+seasonal, so the window runs on a back-adjusted series: each daily change is measured on one
+delivery month, and the switch of month never enters the mean or the z-score:
 
 <!-- BEGIN:sql-example-2 -->
 | Spread (USD/bbl) | Delivery | Value | 60-day mean | 60-day sd | z | z (exec.) |
 | :--- | :--- | ---: | ---: | ---: | ---: | ---: |
-| crack_321 | 2024-06 | 30.03 | 30.40 | 2.85 | -0.13 | -0.09 |
-| distillate_crack | 2024-06 | 29.95 | 34.24 | 4.09 | -1.05 | -1.08 |
-| gasoline_crack | 2024-06 | 30.07 | 28.48 | 4.38 | +0.36 | +0.39 |
+| crack_321 | 2024-06 | 30.03 | 30.14 | 1.64 | -0.06 | -0.03 |
+| distillate_crack | 2024-06 | 29.95 | 32.67 | 3.05 | -0.89 | -0.91 |
+| gasoline_crack | 2024-06 | 30.07 | 28.87 | 1.99 | +0.61 | +0.63 |
 
-On 2024-04-05, the last EIA settlement. `z (exec.)` uses a window ending the day before, usable by a signal traded at the close.
+On 2024-04-05, the last EIA settlement. The mean is back-adjusted, in 2024-06 contract terms. `z (exec.)` uses a window ending the day before, usable by a signal traded at the close.
 <!-- END:sql-example-2 -->
 
 ### 3. Carry

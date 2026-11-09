@@ -799,6 +799,8 @@ def sql_layer(out: Output) -> dict[str, float]:
         align="llrrrrr",
     ) + (
         f"\n\nOn {pd.Timestamp(z['trade_date'].iloc[0]).date()}, the last EIA settlement. "
+        f"The mean is back-adjusted, in {pd.Timestamp(z['delivery_month'].iloc[0]):%Y-%m} "
+        "contract terms. "
         "`z (exec.)` uses a window ending the day before, usable by a signal traded at the close."
     )
     out.blocks["sql-example"] = (
