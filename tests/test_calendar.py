@@ -60,11 +60,13 @@ def test_assign_delivery_months_switches_after_expiry() -> None:
 def test_calendar_agrees_with_price_implied_rolls(panel: pd.DataFrame) -> None:
     """Calendar vs the roll days revealed by prices (identifiable rolls only).
 
-    A calendar error shows up as a systematic ±1 offset. The remaining
-    disagreements were reviewed one by one: the price-based detector fails in
-    extreme volatility (CL 2011-02 Libya, 2020-03 Covid, 2022-02 Ukraine; RB
-    2020-04) while the rule-based dates match the published CME last trading
-    days.
+    A calendar error shows up as a systematic ±1 offset. On the frozen sample
+    the detector disagrees on six rolls (offset in sessions): CL 1985-09-23 (+2),
+    2010-05-21 (+3), 2020-03-23 (−3), 2022-02-23 (+4); NG 2010-03-30 (+4); RB
+    2020-04-01 (+1). The rule-based dates follow the published expiry rules;
+    they were not checked against an official exchange list. The set is pinned:
+    a new disagreement fails the test. Agreement is 98.7 % exact, 98.9 % within
+    one session.
     """
     bd = cal.business_days()
     calendar = cal.expiry_calendar(CODES, "1979-01", "2031-12")
@@ -80,6 +82,17 @@ def test_calendar_agrees_with_price_implied_rolls(panel: pd.DataFrame) -> None:
     identifiable = res[res["snr"] > 8]
     assert len(identifiable) > 400
     assert (identifiable["offset"] == 0).mean() >= 0.98
-    one_day = identifiable[identifiable["offset"].abs() == 1]
-    reviewed = {("RB", pd.Timestamp("2020-04-01"))}
-    assert set(zip(one_day["code"], one_day["expected_roll"], strict=True)) <= reviewed
+    misses = identifiable[identifiable["offset"] != 0]
+    known = {
+        ("CL", "1985-09-23", 2),
+        ("CL", "2010-05-21", 3),
+        ("CL", "2020-03-23", -3),
+        ("CL", "2022-02-23", 4),
+        ("NG", "2010-03-30", 4),
+        ("RB", "2020-04-01", 1),
+    }
+    got = {
+        (r.code, pd.Timestamp(r.expected_roll).strftime("%Y-%m-%d"), int(r.offset))
+        for r in misses.itertuples()
+    }
+    assert got == known

@@ -47,7 +47,7 @@ trading days are rebuilt from the exchange rules and checked against the roll da
 the prices (`tests/test_calendar.py`). Data, sources and breaks: [`docs/DATA.md`](docs/DATA.md).
 
 <!-- BEGIN:calendar-check -->
-On the 468 rolls that prices can identify (out of 932), the rule-based roll day matches the price-implied one in 98.7% of cases; the remaining cases were reviewed one by one (extreme-volatility days where the price-based detector fails).
+On the 468 rolls that prices can identify (out of 932), the rule-based roll day matches the price-implied one in 98.7% of cases (98.9% within one session). Disagreements, in sessions: CL 1985-09-23 (+2), CL 2010-05-21 (+3), CL 2020-03-23 (-3), CL 2022-02-23 (+4), NG 2010-03-30 (+4), RB 2020-04-01 (+1). The calendar dates follow the published expiry rules; these cases were not checked against an official exchange list.
 <!-- END:calendar-check -->
 
 ### 1. Term structure

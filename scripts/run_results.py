@@ -172,11 +172,18 @@ def calendar_check(panel: pd.DataFrame, out: Output) -> None:
     identifiable = res[res["snr"] > 8]
     out.tables["calendar_check"] = res
     exact = float((identifiable["offset"] == 0).mean())
+    within_one = float((identifiable["offset"].abs() <= 1).mean())
+    misses = identifiable[identifiable["offset"] != 0].sort_values(["code", "expected_roll"])
+    listed = ", ".join(
+        f"{r.code} {pd.Timestamp(r.expected_roll).date()} ({r.offset:+d})"
+        for r in misses.itertuples()
+    )
     out.blocks["calendar-check"] = (
         f"On the {len(identifiable)} rolls that prices can identify (out of {len(res)}), the "
-        f"rule-based roll day matches the price-implied one in {pct(exact, 1)} of cases; the "
-        "remaining cases were reviewed one by one (extreme-volatility days where the price-based "
-        "detector fails)."
+        f"rule-based roll day matches the price-implied one in {pct(exact, 1)} of cases "
+        f"({pct(within_one, 1)} within one session). Disagreements, in sessions: {listed}. "
+        "The calendar dates follow the published expiry rules; these cases were not checked "
+        "against an official exchange list."
     )
 
 
