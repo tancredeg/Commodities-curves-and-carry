@@ -3,6 +3,7 @@
 -- Input: parquet files in the folder held by the DuckDB variable `sample_dir`
 -- (set by energycurves.db; from the DuckDB CLI: SET VARIABLE sample_dir = 'data/sample').
 -- Every row keeps its provenance in `source` (provider + series key).
+-- Each upsert is followed by a DELETE of the rows that left the sample.
 
 -- Futures settlements, contracts 1-4 (EIA, raw).
 INSERT INTO fact_price_daily (date, code, contract, settle, volume, source)
@@ -18,6 +19,12 @@ ON CONFLICT (date, code, contract) DO UPDATE SET
     settle = EXCLUDED.settle,
     volume = EXCLUDED.volume,
     source = EXCLUDED.source;
+
+DELETE FROM fact_price_daily AS t
+WHERE NOT EXISTS (
+    SELECT 1 FROM read_parquet(getvariable('sample_dir') || '/futures_daily.parquet') AS s
+    WHERE CAST(s.date AS DATE) = t.date AND s.code = t.code AND s.contract = t.contract
+);
 
 -- Live natural-gas strip on the snapshot date (Yahoo Finance closes).
 INSERT INTO fact_curve_snapshot
@@ -37,6 +44,14 @@ ON CONFLICT (snapshot_date, code, delivery_month) DO UPDATE SET
     volume = EXCLUDED.volume,
     source = EXCLUDED.source;
 
+DELETE FROM fact_curve_snapshot AS t
+WHERE NOT EXISTS (
+    SELECT 1 FROM read_parquet(getvariable('sample_dir') || '/ng_strip_snapshot.parquet') AS s
+    WHERE CAST(s.snapshot_date AS DATE) = t.snapshot_date
+      AND s.code = t.code
+      AND CAST(s.delivery_month AS DATE) = t.delivery_month
+);
+
 -- Spot prices (EIA).
 INSERT INTO fact_spot_daily (date, series_id, code, price, unit, source)
 SELECT CAST(date AS DATE), series_id, code, value, unit, 'EIA:' || source_key
@@ -46,3 +61,9 @@ ON CONFLICT (date, series_id) DO UPDATE SET
     price  = EXCLUDED.price,
     unit   = EXCLUDED.unit,
     source = EXCLUDED.source;
+
+DELETE FROM fact_spot_daily AS t
+WHERE NOT EXISTS (
+    SELECT 1 FROM read_parquet(getvariable('sample_dir') || '/spot_daily.parquet') AS s
+    WHERE CAST(s.date AS DATE) = t.date AND s.series_id = t.series_id
+);

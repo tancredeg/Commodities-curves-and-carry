@@ -42,6 +42,27 @@ def test_two_builds_give_the_same_database(tmp_path: Path) -> None:
         pd.testing.assert_frame_equal(frame, after[table], check_exact=True, obj=table)
 
 
+def test_rebuild_removes_rows_that_left_the_sample(tmp_path: Path) -> None:
+    path = tmp_path / "stale.duckdb"
+    first = build_database(path)
+    fresh = table_counts(first)
+    first.execute("INSERT INTO dim_business_day VALUES (DATE '1970-01-02')")
+    first.execute(
+        "INSERT INTO fact_price_daily (date, code, contract, settle, volume, source) "
+        "VALUES (DATE '1970-01-02', 'CL', 1, 1.0, NULL, 'stale')"
+    )
+    first.close()
+    second = build_database(path)  # upserts alone would keep both stale rows
+    stale = second.execute(
+        "SELECT (SELECT count(*) FROM dim_business_day WHERE date = DATE '1970-01-02') "
+        "+ (SELECT count(*) FROM fact_price_daily WHERE source = 'stale')"
+    ).fetchone()
+    rebuilt = table_counts(second)
+    second.close()
+    assert stale == (0,)
+    pd.testing.assert_frame_equal(fresh, rebuilt)
+
+
 def test_fact_curve_equals_python_panel(
     con: duckdb.DuckDBPyConnection, panel: pd.DataFrame
 ) -> None:

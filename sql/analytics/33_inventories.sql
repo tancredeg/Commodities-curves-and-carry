@@ -27,7 +27,12 @@ WITH weekly AS (
 ),
 with_history AS (
     SELECT
-        *,
+        code,
+        region,
+        week_ending,
+        stock,
+        iso_year,
+        iso_week,
         avg(stock) OVER same_week_5y AS avg_5y,
         count(*)   OVER same_week_5y AS n_years,
         lag(stock) OVER same_week_1y AS stock_1y_ago,
