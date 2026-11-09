@@ -928,9 +928,13 @@ def _csv(table: pd.DataFrame) -> str:
 
 
 def stale_tables(tables: dict[str, pd.DataFrame]) -> list[str]:
-    """Result tables whose saved CSV differs from a fresh run (relative tolerance 1e-8).
+    """Result tables whose saved CSV differs from a fresh run.
 
-    Figures are not compared: PNG bytes depend on the matplotlib build.
+    Tolerance: relative 1e-3, absolute 1e-6. Least-squares calibrations differ
+    in their last digits across machines (local vs CI) and the storage Monte
+    Carlo inherits that noise (the regression tests allow 1e-4 on the
+    parameters); a real change of a result is far larger. Figures are not
+    compared: PNG bytes depend on the matplotlib build.
     """
     stale = []
     for name, table in tables.items():
@@ -942,9 +946,10 @@ def stale_tables(tables: dict[str, pd.DataFrame]) -> list[str]:
         saved = pd.read_csv(path)
         try:
             pd.testing.assert_frame_equal(
-                fresh, saved, check_exact=False, rtol=1e-8, atol=1e-12, check_dtype=False
+                fresh, saved, check_exact=False, rtol=1e-3, atol=1e-6, check_dtype=False
             )
-        except AssertionError:
+        except AssertionError as err:
+            print(f"{name}: {str(err).splitlines()[0]}")
             stale.append(name)
     return stale
 
