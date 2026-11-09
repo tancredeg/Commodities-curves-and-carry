@@ -3,7 +3,7 @@
 Usage::
 
     python scripts/run_results.py           # write docs/results, docs/figures, README blocks
-    python scripts/run_results.py --check   # recompute; exit 1 if a README block would change
+    python scripts/run_results.py --check   # recompute; exit 1 if a block or a table would change
 
 Every number shown in ``README.md`` and ``docs/DATA.md`` sits between
 ``<!-- BEGIN:name -->`` / ``<!-- END:name -->`` markers and is written here, so
@@ -15,6 +15,7 @@ fixed seeds; the whole run takes well under a minute.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import re
 import sys
@@ -922,9 +923,37 @@ def render(text: str, blocks: dict[str, str]) -> tuple[str, set[str]]:
     return pattern.sub(sub, text), used
 
 
+def _csv(table: pd.DataFrame) -> str:
+    return table.to_csv(index=False, float_format="%.10g")
+
+
+def stale_tables(tables: dict[str, pd.DataFrame]) -> list[str]:
+    """Result tables whose saved CSV differs from a fresh run (relative tolerance 1e-8).
+
+    Figures are not compared: PNG bytes depend on the matplotlib build.
+    """
+    stale = []
+    for name, table in tables.items():
+        path = RESULTS / f"{name}.csv"
+        if not path.exists():
+            stale.append(name)
+            continue
+        fresh = pd.read_csv(io.StringIO(_csv(table)))
+        saved = pd.read_csv(path)
+        try:
+            pd.testing.assert_frame_equal(
+                fresh, saved, check_exact=False, rtol=1e-8, atol=1e-12, check_dtype=False
+            )
+        except AssertionError:
+            stale.append(name)
+    return stale
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--check", action="store_true", help="fail if a document block is stale")
+    parser.add_argument(
+        "--check", action="store_true", help="fail if a document block or a result table is stale"
+    )
     args = parser.parse_args()
     t_start = time.time()
     out = Output()
@@ -952,13 +981,15 @@ def main() -> int:
     if unused:
         print(f"warning: blocks not placed in any document: {sorted(unused)}")
     if args.check:
+        tables = stale_tables(out.tables)
         print(f"stale documents: {stale}" if stale else "documents are up to date")
-        return 1 if stale else 0
+        print(f"stale tables: {tables}" if tables else "result tables are up to date")
+        return 1 if stale or tables else 0
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     FIGURES.mkdir(parents=True, exist_ok=True)
     for name, table in out.tables.items():
-        table.to_csv(RESULTS / f"{name}.csv", index=False, float_format="%.10g")
+        (RESULTS / f"{name}.csv").write_text(_csv(table), encoding="utf-8")
     for name, writer in out.figures.items():
         writer(FIGURES / name)
     print(f"updated: {stale or 'nothing'}; {len(out.tables)} tables, {len(out.figures)} figures")
