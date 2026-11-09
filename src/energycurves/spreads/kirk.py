@@ -32,12 +32,24 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.stats import norm
 
+VOL_FLOOR = 1e-12  # below this total volatility the option is worth its intrinsic value
+
+
+def _exchange_value(F1: float, F2: float, v: float, D: float) -> float:
+    """``D E[(X_1 − X_2)^+]`` when ``ln(X_1/X_2)`` has total standard deviation ``v``.
+
+    For ``v → 0`` the formula tends to ``D (F_1 − F_2)^+``; that limit is used
+    below ``VOL_FLOOR`` instead of dividing by zero.
+    """
+    if v <= VOL_FLOOR:
+        return float(D * max(F1 - F2, 0.0))
+    d1 = (np.log(F1 / F2) + 0.5 * v * v) / v
+    return float(D * (F1 * norm.cdf(d1) - F2 * norm.cdf(d1 - v)))
+
 
 def margrabe_call(F1: float, F2: float, *, v1: float, v2: float, c12: float, D: float) -> float:
     """Exchange option ``(X_1 − X_2)^+``: exact under joint lognormality."""
-    v = np.sqrt(v1 * v1 - 2.0 * c12 + v2 * v2)
-    d1 = (np.log(F1 / F2) + 0.5 * v * v) / v
-    return float(D * (F1 * norm.cdf(d1) - F2 * norm.cdf(d1 - v)))
+    return _exchange_value(F1, F2, float(np.sqrt(max(v1 * v1 - 2.0 * c12 + v2 * v2, 0.0))), D)
 
 
 def kirk_call(
@@ -51,9 +63,8 @@ def kirk_call(
     if base <= 0:
         raise ValueError("Kirk's approximation needs F2 + K > 0")
     w = F2 / base
-    vk = np.sqrt(v1 * v1 - 2.0 * w * c12 + w * w * v2 * v2)
-    d1 = (np.log(F1 / base) + 0.5 * vk * vk) / vk
-    return float(D * (F1 * norm.cdf(d1) - base * norm.cdf(d1 - vk)))
+    vk = float(np.sqrt(max(v1 * v1 - 2.0 * w * c12 + w * w * v2 * v2, 0.0)))
+    return _exchange_value(F1, base, vk, D)
 
 
 def kirk_put(

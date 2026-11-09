@@ -41,13 +41,13 @@ def test_margrabe_is_exact_under_the_monte_carlo_model() -> None:
 
 
 def test_put_call_parity() -> None:
-    for K in (-10.0, 0.0, 29.0, 45.0):
-        c = kirk_call(F1, F2, K, v1=V1, v2=V2, c12=C12, D=D)
-        p = kirk_put(F1, F2, K, v1=V1, v2=V2, c12=C12, D=D)
-        assert c - p == pytest.approx(D * (F1 - F2 - K))
-        assert p >= -1e-12
+    """Parity on Monte Carlo payoffs (model-free), and the Kirk put against them.
+
+    kirk_put is *defined* by parity, so C − P = D (F_1 − F_2 − K) on Kirk prices
+    would be a tautology; the put is checked against simulated put payoffs instead.
+    """
     cov = np.array([[V1**2, C12], [C12, V2**2]])
-    draws = terminal_draws(np.array([F1, F2]), cov, 200_000, np.random.default_rng(2))
+    draws = terminal_draws(np.array([F1, F2]), cov, 1_000_000, np.random.default_rng(2))
     w = np.array([1.0, -1.0])
     call = spread_option_mc(w, draws, 29.0, D)
     put = spread_option_mc(w, draws, 29.0, D, call=False)
@@ -55,6 +55,19 @@ def test_put_call_parity() -> None:
     assert call.price - put.price == pytest.approx(D * (draws @ w - 29.0).mean())
     spread_se = D * (draws @ w).std() / np.sqrt(len(draws))
     assert abs(call.price - put.price - D * (F1 - F2 - 29.0)) < 3 * spread_se
+    kirk = kirk_put(F1, F2, 29.0, v1=V1, v2=V2, c12=C12, D=D)
+    assert abs(kirk - put.price) / put.price < 0.01  # at the money, as for the call
+    for K in (-10.0, 0.0, 29.0, 45.0):
+        assert kirk_put(F1, F2, K, v1=V1, v2=V2, c12=C12, D=D) >= -1e-12
+
+
+def test_zero_volatility_gives_the_discounted_intrinsic_value() -> None:
+    for K in (-10.0, 0.0, 29.0, 45.0):
+        intrinsic = D * max(F1 - F2 - K, 0.0)
+        assert kirk_call(F1, F2, K, v1=0.0, v2=0.0, c12=0.0, D=D) == pytest.approx(intrinsic)
+    # perfectly correlated legs with equal volatilities: the ratio does not move
+    m = margrabe_call(F1, F2, v1=0.2, v2=0.2, c12=0.04, D=D)
+    assert m == pytest.approx(D * (F1 - F2))
 
 
 def test_kirk_is_close_to_monte_carlo_at_the_money() -> None:
