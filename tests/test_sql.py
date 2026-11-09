@@ -63,13 +63,15 @@ def test_slot_returns_view_equals_python(
     con: duckdb.DuckDBPyConnection, panel: pd.DataFrame
 ) -> None:
     sql = con.execute(
-        "SELECT trade_date AS date, code, ret, rolled FROM v_slot_returns "
-        "WHERE slot = 2 AND ret IS NOT NULL"
+        "SELECT trade_date AS date, code, ret, held_month, rolled FROM v_slot_returns "
+        "WHERE slot = 2"
     ).df()
-    py = slot_returns(panel, slot=2).dropna(subset=["ret"])
+    py = slot_returns(panel, slot=2)
     merged = py.merge(sql, on=["date", "code"], suffixes=("_py", "_sql"), validate="one_to_one")
-    assert len(merged) == len(py) == len(sql)
+    assert len(merged) == len(py) == len(sql)  # every trading day, missing returns included
     np.testing.assert_allclose(merged["ret_py"], merged["ret_sql"], rtol=1e-12, atol=1e-14)
+    held_sql = pd.to_datetime(merged["held_month_sql"]).to_numpy()
+    assert (merged["held_month_py"].to_numpy() == held_sql).all()
     assert (merged["rolled_py"] == merged["rolled_sql"]).all()
 
 

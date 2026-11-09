@@ -72,6 +72,26 @@ def test_slot2_index_equals_price_ratio_of_held_contracts() -> None:
     assert np.isclose(index["XX"].iloc[-1], expected)
 
 
+def test_missing_settle_neither_fakes_a_roll_nor_loses_the_return() -> None:
+    p = _synthetic_panel()
+    gap = p[~((p["date"] == "2020-01-07") & (p["contract"] == 2))]  # April missing on day 4
+    extra = pd.DataFrame(
+        {
+            "date": pd.to_datetime(["2020-01-08", "2020-01-08"]),
+            "contract": [1, 2],
+            "delivery_month": pd.to_datetime(["2020-03", "2020-04"]),
+            "settle": [114.0, 127.0],
+            "code": "XX",
+        }
+    )
+    rets = slot_returns(pd.concat([gap, extra], ignore_index=True), slot=2).set_index("date")
+    assert np.isnan(rets.loc["2020-01-07", "ret"])  # no April settle on day 4
+    assert not bool(rets.loc["2020-01-07", "rolled"])  # ... but no expiry either
+    assert np.isclose(rets.loc["2020-01-08", "ret"], 127 / 125 - 1)  # return over the gap
+    assert rets["held_month"].loc["2020-01-08"] == pd.Timestamp("2020-04-01")
+    assert int(rets["rolled"].sum()) == 1
+
+
 def test_naive_pct_change_would_include_the_roll_jump() -> None:
     p = _synthetic_panel()
     naive = p[p["contract"] == 2].set_index("date")["settle"].pct_change()

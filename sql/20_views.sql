@@ -18,32 +18,82 @@ FROM fact_curve
 WINDOW same_contract AS (PARTITION BY code, delivery_month ORDER BY trade_date);
 
 -- Return of a position held in slot k from the previous trading day of the
--- commodity to today. If contract 1 expired yesterday the held contract has
--- moved to slot k-1 today: `rolled` is TRUE and the position is re-established
--- in slot k at today's close. Same logic as energycurves.data.stitch.slot_returns.
+-- commodity to today. The slot occupant comes from the curve structure, not
+-- from the presence of a price (contract c in month m => front month m - (c-1)),
+-- so a missing settle neither fakes a roll nor loses the return: p0 is the last
+-- settle of the held contract within 5 sessions and since it entered the slot.
+-- `rolled` is TRUE when another month occupies the slot today (an expiry in
+-- between). Same logic as energycurves.data.stitch.slot_returns.
 CREATE OR REPLACE VIEW v_slot_returns AS
-WITH trading_days AS (
+WITH days AS (
     SELECT
         code,
         trade_date,
-        LAG(trade_date) OVER (PARTITION BY code ORDER BY trade_date) AS prev_trade_date
-    FROM (SELECT DISTINCT code, trade_date FROM fact_curve)
+        ROW_NUMBER() OVER (PARTITION BY code ORDER BY trade_date) AS day_no,
+        CAST(min(delivery_month - to_months(contract - 1)) AS DATE) AS front_month
+    FROM fact_curve
+    GROUP BY code, trade_date
+),
+slots AS (
+    SELECT
+        d.code,
+        d.trade_date,
+        d.day_no,
+        s.slot,
+        CAST(d.front_month + to_months(s.slot - 1) AS DATE) AS occupant
+    FROM days AS d
+    CROSS JOIN range(1, 5) AS s(slot)
+),
+positions AS (                             -- held over (yesterday, today]
+    SELECT
+        t.code,
+        t.trade_date,
+        t.day_no,
+        y.day_no      AS prev_day_no,
+        t.slot,
+        y.occupant    AS held_month,
+        t.occupant    AS today_occupant
+    FROM slots AS t
+    JOIN slots AS y
+        ON  y.code = t.code
+        AND y.slot = t.slot
+        AND y.day_no = t.day_no - 1
+),
+entries AS (                               -- first session of a month in the slot
+    SELECT code, slot, occupant, min(day_no) AS entry_day_no
+    FROM slots
+    GROUP BY code, slot, occupant
+),
+observed AS (
+    SELECT f.code, f.delivery_month, d.day_no, f.settle
+    FROM fact_curve AS f
+    JOIN days AS d
+        ON  d.code = f.code
+        AND d.trade_date = f.trade_date
 )
 SELECT
-    d.trade_date,
-    d.code,
-    held.contract                         AS slot,
-    held.delivery_month                   AS held_month,
-    CASE WHEN held.settle > 0 THEN today.settle / held.settle - 1 END AS ret,
-    today.contract IS DISTINCT FROM held.contract AS rolled
-FROM trading_days AS d
-JOIN fact_curve AS held                    -- one row per slot held yesterday
-    ON  held.code = d.code
-    AND held.trade_date = d.prev_trade_date
-LEFT JOIN fact_curve AS today              -- same contract, today (may be missing)
-    ON  today.code = d.code
-    AND today.trade_date = d.trade_date
-    AND today.delivery_month = held.delivery_month;
+    p.trade_date,
+    p.code,
+    p.slot,
+    p.held_month,
+    CASE
+        WHEN p0.settle > 0 AND p0.day_no >= greatest(e.entry_day_no, p.prev_day_no - 4)
+        THEN p1.settle / p0.settle - 1
+    END AS ret,
+    p.today_occupant <> p.held_month AS rolled
+FROM positions AS p
+JOIN entries AS e
+    ON  e.code = p.code
+    AND e.slot = p.slot
+    AND e.occupant = p.held_month
+ASOF LEFT JOIN observed AS p0              -- last settle on or before yesterday
+    ON  p0.code = p.code
+    AND p0.delivery_month = p.held_month
+    AND p.prev_day_no >= p0.day_no
+LEFT JOIN observed AS p1                   -- same contract, today (may be missing)
+    ON  p1.code = p.code
+    AND p1.delivery_month = p.held_month
+    AND p1.day_no = p.day_no;
 
 -- One row per trade date and commodity with the four curve points side by
 -- side (conditional aggregation with FILTER).

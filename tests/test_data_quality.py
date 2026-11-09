@@ -138,8 +138,13 @@ def test_curve_build_does_not_multiply_rows(con: duckdb.DuckDBPyConnection) -> N
     assert isinstance(raw_on_bd, int)
     assert curve == raw_on_bd - 2  # exactly the two isolated typos removed
     slot_rows = scalar(con, "SELECT count(*) FROM v_slot_returns")
-    assert isinstance(slot_rows, int) and isinstance(curve, int)
-    assert slot_rows <= curve
+    day_pairs = scalar(
+        con,
+        "SELECT count(*) - count(DISTINCT code) "
+        "FROM (SELECT DISTINCT code, trade_date FROM fact_curve)",
+    )
+    assert isinstance(slot_rows, int) and isinstance(day_pairs, int)
+    assert slot_rows == 4 * day_pairs  # one row per slot and trading day after the first
 
 
 def test_delivery_months_are_strictly_increasing_along_the_curve(

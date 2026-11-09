@@ -1,13 +1,13 @@
 variant,strategy,sharpe,t_stat
-"default (day 10, span 60)",TS-deseason,0.0810980639,0.3185059033
-"default (day 10, span 60)",XS-deseason,0.2509882049,0.9857353069
-rebalance day 5,TS-deseason,0.09256216117,0.3637639286
-rebalance day 5,XS-deseason,0.4279484561,1.681812629
-rebalance day 15,TS-deseason,0.2565232496,1.00682555
-rebalance day 15,XS-deseason,0.1611579271,0.6325271446
-vol span 20,TS-deseason,0.130034901,0.5107012621
-vol span 20,XS-deseason,0.2456928893,0.9649383952
-vol span 120,TS-deseason,0.06865679338,0.2696438477
-vol span 120,XS-deseason,0.2573307234,1.010645021
-full monthly mean removed,TS-deseason,0.07102403727,0.2789410013
-full monthly mean removed,XS-deseason,-0.1316126103,-0.5168975843
+"default (day 10, span 60)",TS-deseason,0.0884734272,0.3474720295
+"default (day 10, span 60)",XS-deseason,0.2306006724,0.9056649683
+rebalance day 5,TS-deseason,0.09367746817,0.3681470204
+rebalance day 5,XS-deseason,0.4126914695,1.621853556
+rebalance day 15,TS-deseason,0.2620246087,1.02841778
+rebalance day 15,XS-deseason,0.1439383916,0.5649423609
+vol span 20,TS-deseason,0.1357953244,0.5333248464
+vol span 20,XS-deseason,0.2258514455,0.8870127743
+vol span 120,TS-deseason,0.07622461878,0.2993658528
+vol span 120,XS-deseason,0.2366224838,0.9293151319
+full monthly mean removed,TS-deseason,0.07682119437,0.3017088538
+full monthly mean removed,XS-deseason,-0.12767789,-0.5014442976

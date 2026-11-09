@@ -67,11 +67,11 @@ def test_carry_sharpe_ratios(panel: pd.DataFrame, roll_yields: pd.DataFrame) -> 
     metrics, _, _ = bt.evaluate(inputs, start, EIA_END, config)
     sharpe = metrics.set_index("strategy")["sharpe"]
     expected = {
-        "TS-raw": -0.06293746016537974,
-        "TS-deseason": 0.08109806390254852,
-        "XS-raw": -0.08725850191478246,
-        "XS-deseason": 0.25098820487904755,
-        "LO": -0.06887471996336665,
+        "TS-raw": -0.062370173583610466,
+        "TS-deseason": 0.08847342720409776,
+        "XS-raw": -0.0890667072830886,
+        "XS-deseason": 0.23060067243598176,
+        "LO": -0.07357665429917984,
     }
     for strategy, value in expected.items():
         assert sharpe[strategy] == pytest.approx(value, rel=REL)
