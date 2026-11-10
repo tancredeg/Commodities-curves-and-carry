@@ -30,8 +30,6 @@ import pandas as pd
 
 from energycurves.carry.metrics import performance
 
-STRATEGIES = ("TS", "XS", "LO")
-
 
 @dataclass(frozen=True)
 class CarryConfig:

@@ -20,7 +20,8 @@ data/*.duckdb.wal
 *.duckdb
 *.duckdb.wal
 
-# Local notes, never published
+# Local working folders (not part of the project)
+.claude/
 entretien/
 
 # OS / editors

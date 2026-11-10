@@ -72,11 +72,10 @@ SPREAD_VALUATION = "2024-04-05"
 SPREAD_MONTHS = ("2024-06-01", "2024-07-01", "2024-08-01")
 SPREAD_OFFSETS = (-20.0, -10.0, -5.0, 0.0, 5.0, 10.0, 20.0)
 
-# Chart chrome (light surface) and categorical slots, validated with the dataviz checks.
-INK, INK_2, MUTED, GRID, AXIS, SURFACE = (
+# Figure colours: text, axes, grid and background, then one colour per series.
+INK, INK_2, GRID, AXIS, SURFACE = (
     "#0b0b0b",
     "#52514e",
-    "#898781",
     "#e1e0d9",
     "#c3c2b7",
     "#fcfcfb",

@@ -382,3 +382,5 @@ docs/         DATA.md, results/*.csv, figures/*.png
 - Schwartz, E. & Smith, J. E. (2000). Short-term variations and long-term dynamics in commodity prices. *Management Science*, 46(7), 893–911.
 - Secomandi, N. (2010). Optimal commodity trading with a capacitated storage asset. *Management Science*, 56(3), 449–467.
 - Data: U.S. Energy Information Administration (NYMEX futures, spot prices, weekly stocks); Federal Reserve Bank of St. Louis, FRED (`DTB3`, `DEXUSEU`); Yahoo Finance (NG strip snapshot).
+
+Built in collaboration with Claude (Anthropic) as a coding assistant.
