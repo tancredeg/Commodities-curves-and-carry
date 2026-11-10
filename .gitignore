@@ -20,6 +20,9 @@ data/*.duckdb.wal
 *.duckdb
 *.duckdb.wal
 
+# Local notes, never published
+entretien/
+
 # OS / editors
 .DS_Store
 .idea/
